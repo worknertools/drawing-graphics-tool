@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Type play</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Drawing Tool - 100% WYSIWYG Edition</title>
+    <style>
+        :root {
+            --bg-page: #f2f2f2;        
+            --bg-canvas: #f0e7e0;      
+            --bg-card: #ffffff;
+            --border-color: #e0ddd5;
+            --font-mono: 'Courier New', Courier, 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans SC', 'Noto Sans CJK SC', sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-page);
+            font-family: var(--font-mono);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #000;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 1000px;
+            max-width: 98vw;
+            height: 90vh;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #drawCanvas {
+            background-color: #fff;
+            cursor: default; 
+            border: none;
+            box-shadow: none;
+            outline: none;
+            width: 570px; 
+            height: 760px;
+            touch-action: none;
+            image-rendering: auto; 
+        }
+
+        .sidebar {
+            flex: 0 0 260px; 
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: 760px; 
+        }
+
+        .box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 20px 15px; 
+        }
+
+        .label {
+            font-size: 11px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            display: block;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .section-divider {
+            margin-top: 35px; 
+        }
+
+        .slider-wrap { margin-bottom: 25px; } 
+        
+        .slider-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 1px;
+            background: #000;
+            outline: none;
+            margin: 12px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border: 1.5px solid #000;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .color-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .color-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .color-item span { font-size: 10px; font-weight: bold; }
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            height: 25px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; }
+
+        .btn-group { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 6px; 
+            margin-bottom: 10px; 
+        }
+        
+        .btn-ui {
+            padding: 10px 1px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+        .btn-ui.active { background: #000; color: #fff; }
+        .btn-black { background: #000; color: #fff; }
+
+        .btn-clear-main {
+            width: 100%;
+            padding: 15px;
+            background-color: #808080; 
+            border: none;
+            color: #fff;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: auto; 
+            text-transform: uppercase;
+        }
+
+        .nav-link { 
+            font-size: 20px; 
+            color: #000; 
+            text-decoration: none; 
+            margin-bottom: 5px; 
+            display: inline-block; 
+            font-weight: 900; 
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="canvas-section">
+        <canvas id="drawCanvas" width="600" height="800"></canvas>
+    </div>
+
+    <div class="sidebar">
+        <div class="nav-link">Rough Feeling Graphics<br>Drawing Tool</div>
+
+        <div class="box">
+            <span class="label">COLOR SETTINGS 颜色设置</span>
+            <div class="color-group">
+                <div class="color-item">
+                    <span>BRUSH 画笔</span>
+                    <input type="color" id="inp-brush-color" value="#000000">
+                </div>
+                <div class="color-item">
+                    <span>CANVAS 画布</span>
+                    <input type="color" id="inp-bg-color" value="#f0e7e0">
+                </div>
+            </div>
+
+            <span class="label section-divider">BRUSH STYLE 画笔风格</span>
+            <div class="btn-group">
+                <button id="mode-blocky" class="btn-ui" onclick="setMode('blocky')">方块</button>
+                <button id="mode-marker" class="btn-ui active" onclick="setMode('marker')">马克笔</button>
+                <button id="mode-ink" class="btn-ui" onclick="setMode('ink')">墨水</button>
+                <button id="mode-organic" class="btn-ui" onclick="setMode('organic')">有机</button>
+                <button id="mode-jitter" class="btn-ui" onclick="setMode('jitter')">抖动</button>
+                <button id="mode-pixel" class="btn-ui" onclick="setMode('pixel')">像素</button>
+                <button id="mode-flat" class="btn-ui" onclick="setMode('flat')">扁头</button>
+                <button id="mode-ribbon" class="btn-ui" onclick="setMode('ribbon')">丝带</button>
+                <button id="mode-pix-thick" class="btn-ui" onclick="setMode('pix-thick')">像素粗笔</button>
+                <button id="mode-beads" class="btn-ui" onclick="setMode('beads')">圆珠</button>
+                <button id="mode-weave" class="btn-ui" onclick="setMode('weave')">编织</button>
+                <button id="mode-calligraphy" class="btn-ui" onclick="setMode('calligraphy')">蜡笔</button>
+            </div>
+
+            <div class="slider-wrap section-divider">
+                <div class="slider-info"><span>BRUSH SIZE 画笔大小</span><span id="val-size">12px</span></div>
+                <input type="range" id="inp-size" min="2" max="100" value="12">
+            </div>
+
+            <div id="rough-wrap" class="slider-wrap">
+                <div class="slider-info"><span id="lbl-rough">ROUGHNESS 粗糙度</span><span id="val-rough">50%</span></div>
+                <input type="range" id="inp-rough" min="0" max="100" value="50">
+            </div>
+
+            <span class="label section-divider">SAVE FILE 保存文件</span>
+            <div class="btn-group">
+                <button class="btn-ui btn-black" onclick="downloadJPG()">JPG</button>
+                <button class="btn-ui btn-black" onclick="downloadPNG()">PNG</button>
+                <button class="btn-ui btn-black" onclick="downloadSVG()">SVG</button>
+            </div>
+        </div>
+
+        <button class="btn-clear-main" onclick="clearCanvas()">CLEAR CANVAS 清空画布</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let isDrawing = false;
+    let bSize = 12;
+    let bRough = 0.5;
+    let bColor = '#000000';
+    let bgColor = '#f0e7e0'; 
+    let lastX = 0, lastY = 0;
+    let lastGridX = null, lastGridY = null; 
+    let brushMode = 'marker'; 
+    let currentW = 12; 
+    let allPaths = []; 
+    let weaveDist = 0;
+
+    function initCanvas() {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    }
+    initCanvas();
+
+    function refreshScreen() {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        allPaths.forEach(path => drawPathToContext(ctx, path, 1));
+    }
+
+    function drawPathToContext(targetCtx, path, scale) {
+        targetCtx.strokeStyle = path.color;
+        targetCtx.fillStyle = path.color;
+        targetCtx.lineCap = 'round'; targetCtx.lineJoin = 'round';
+        
+        if (path.mode === 'ribbon') {
+            if (!path.points || path.points.length < 2) return;
+            targetCtx.lineCap = 'butt'; targetCtx.lineWidth = path.width * scale;
+            targetCtx.beginPath();
+            targetCtx.moveTo(path.points[0].x * scale, path.points[0].y * scale);
+            for(let i = 1; i < path.points.length; i++) targetCtx.lineTo(path.points[i].x * scale, path.points[i].y * scale);
+            targetCtx.stroke();
+        } else if (path.mode === 'blocky' || path.mode === 'pixel' || path.mode === 'pix-thick') {
+            path.segments.forEach(seg => targetCtx.fillRect(seg.x * scale, seg.y * scale, seg.w * scale, seg.w * scale));
+        } else if (path.mode === 'beads') {
+            path.segments.forEach(seg => {
+                targetCtx.beginPath();
+                targetCtx.arc(seg.x * scale, seg.y * scale, (seg.w/2) * scale, 0, Math.PI * 2);
+                targetCtx.fill();
+            });
+        } else if (path.mode === 'flat' || path.mode === 'calligraphy') {
+            const isCalli = path.mode === 'calligraphy';
+            path.segments.forEach(seg => {
+                if(isCalli) {
+                    targetCtx.beginPath(); targetCtx.lineWidth = seg.w * scale; targetCtx.lineCap = 'butt';
+                    targetCtx.moveTo(seg.x1 * scale, seg.y1 * scale); targetCtx.lineTo(seg.x2 * scale, seg.y2 * scale); targetCtx.stroke();
+                } else {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(seg.x1 * scale, seg.y1 * scale); targetCtx.lineTo(seg.x2 * scale, seg.y2 * scale);
+                    targetCtx.lineTo(seg.x3 * scale, seg.y3 * scale); targetCtx.lineTo(seg.x4 * scale, seg.y4 * scale);
+                    targetCtx.closePath(); targetCtx.fill();
+                }
+            });
+        } else if (path.mode === 'weave') {
+            path.segments.forEach(seg => {
+                targetCtx.save(); targetCtx.translate(seg.x * scale, seg.y * scale); targetCtx.rotate(seg.ang);
+                const sz = seg.sz * scale, w = sz / 5, h = sz * 0.42;
+                if(seg.is3) { targetCtx.fillRect(-sz/2, -h/2, w, h); targetCtx.fillRect(-w/2, -h/2, w, h); targetCtx.fillRect(sz/2-w, -h/2, w, h); }
+                else { targetCtx.fillRect(-sz/2+w, -h/2, w, h); targetCtx.fillRect(sz/2-w*2, -h/2, w, h); }
+                targetCtx.restore();
+            });
+        } else {
+            path.segments.forEach(seg => {
+                targetCtx.beginPath(); targetCtx.lineWidth = seg.w * scale;
+                targetCtx.moveTo(seg.x1 * scale, seg.y1 * scale); targetCtx.lineTo(seg.x2 * scale, seg.y2 * scale);
+                targetCtx.stroke();
+            });
+        }
+    }
+
+    function setMode(mode) {
+        brushMode = mode;
+        const modes = ['blocky', 'marker', 'ink', 'organic', 'jitter', 'pixel', 'flat', 'ribbon', 'pix-thick', 'beads', 'weave', 'calligraphy'];
+        modes.forEach(m => {
+            const btn = document.getElementById(`mode-${m}`);
+            if(btn) btn.classList.toggle('active', mode === m);
+        });
+        const lblRough = document.getElementById('lbl-rough');
+        if(mode === 'beads') lblRough.innerText = 'BEAD DENSITY 圆珠密度';
+        else if(mode === 'blocky') lblRough.innerText = 'BLOCK DENSITY 方块密度';
+        else if(mode === 'calligraphy') lblRough.innerText = 'FEIBAI 飞白效果';
+        else lblRough.innerText = 'ROUGHNESS 粗糙度';
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        return { 
+            x: (clientX - rect.left) * (canvas.width / rect.width), 
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+
+    function start(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x; lastY = pos.y;
+        currentW = bSize; weaveDist = 0;
+        if (brushMode === 'pixel' || brushMode === 'pix-thick') {
+            const g = (brushMode === 'pix-thick') ? 6 : bSize;
+            lastGridX = Math.floor(pos.x / g); lastGridY = Math.floor(pos.y / g);
+        }
+        allPaths.push({ mode: brushMode, color: bColor, width: bSize, segments: [], points: (brushMode === 'ribbon' ? [{x:pos.x, y:pos.y}] : []), pixelSet: new Set() });
+        draw(e);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e);
+        const currentStroke = allPaths[allPaths.length - 1];
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = bColor; ctx.fillStyle = bColor;
+
+        if (brushMode === 'organic') {
+            ctx.beginPath(); ctx.lineWidth = bSize;
+            ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y); ctx.stroke();
+            currentStroke.segments.push({ x1: lastX, y1: lastY, x2: pos.x, y2: pos.y, w: bSize });
+            lastX = pos.x; lastY = pos.y;
+        } else if (brushMode === 'jitter') {
+            const jX = (Math.random() - 0.5) * (bSize * bRough * 0.7);
+            const jY = (Math.random() - 0.5) * (bSize * bRough * 0.7);
+            const jitterW = bSize * (1 + (Math.random() - 0.5) * bRough * 0.4);
+            ctx.beginPath(); ctx.lineWidth = jitterW;
+            ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x + jX, pos.y + jY); ctx.stroke();
+            currentStroke.segments.push({ x1: lastX, y1: lastY, x2: pos.x + jX, y2: pos.y + jY, w: jitterW });
+            lastX = pos.x + jX; lastY = pos.y + jY;
+        } else if (brushMode === 'beads' || brushMode === 'blocky') {
+            const dist = Math.hypot(pos.x - lastX, pos.y - lastY);
+            const factor = (brushMode === 'beads') ? 0.2 : 0.1;
+            const spacing = bSize * (factor + bRough * 2.9);
+            if (dist >= spacing) {
+                const steps = Math.floor(dist / spacing);
+                const angle = Math.atan2(pos.y - lastY, pos.x - lastX);
+                for (let i = 1; i <= steps; i++) {
+                    const tx = lastX + Math.cos(angle) * spacing * i;
+                    const ty = lastY + Math.sin(angle) * spacing * i;
+                    if (brushMode === 'beads') {
+                        ctx.beginPath(); ctx.arc(tx, ty, bSize/2, 0, Math.PI * 2); ctx.fill();
+                        currentStroke.segments.push({ x: tx, y: ty, w: bSize });
+                    } else {
+                        const rx = tx - bSize/2, ry = ty - bSize/2;
+                        ctx.fillRect(rx, ry, bSize, bSize);
+                        currentStroke.segments.push({ x: rx, y: ry, w: bSize });
+                    }
+                }
+                lastX = lastX + Math.cos(angle) * spacing * steps; lastY = lastY + Math.sin(angle) * spacing * steps;
+            }
+        } else if (brushMode === 'marker') {
+            const targetW = bSize * (0.8 + Math.random() * 0.4); 
+            currentW = currentW * 0.7 + targetW * 0.3;
+            const tx = pos.x + (Math.random()-0.5) * (bRough * 4), ty = pos.y + (Math.random()-0.5) * (bRough * 4);
+            ctx.beginPath(); ctx.lineWidth = currentW; ctx.moveTo(lastX, lastY); ctx.lineTo(tx, ty); ctx.stroke();
+            currentStroke.segments.push({ x1: lastX, y1: lastY, x2: tx, y2: ty, w: currentW });
+            lastX = tx; lastY = ty;
+        } else if (brushMode === 'ink') {
+            const dist = Math.hypot(pos.x - lastX, pos.y - lastY);
+            currentW = currentW * 0.6 + Math.max(bSize * 0.2, bSize - (dist * 0.8)) * 0.4;
+            ctx.beginPath(); ctx.lineWidth = currentW; ctx.moveTo(lastX, lastY); ctx.lineTo(pos.x, pos.y); ctx.stroke();
+            currentStroke.segments.push({ x1: lastX, y1: lastY, x2: pos.x, y2: pos.y, w: currentW });
+            lastX = pos.x; lastY = pos.y;
+        } else if (brushMode === 'pixel' || brushMode === 'pix-thick') {
+            const g = (brushMode === 'pix-thick') ? 6 : bSize;
+            const currGridX = Math.floor(pos.x / g), currGridY = Math.floor(pos.y / g);
+            let x = lastGridX, y = lastGridY;
+            const dx = Math.abs(currGridX - x), dy = Math.abs(currGridY - y);
+            const sx = (x < currGridX) ? 1 : -1, sy = (y < currGridY) ? 1 : -1;
+            let err = dx - dy;
+            while (true) {
+                const range = (brushMode === 'pix-thick') ? Math.floor(bSize/g/2) : 0;
+                for(let ox=-range; ox<=range; ox++) {
+                    for(let oy=-range; oy<=range; oy++) {
+                        const drawX = (x+ox)*g, drawY = (y+oy)*g;
+                        const key = `${drawX},${drawY}`;
+                        if (!currentStroke.pixelSet.has(key)) {
+                            ctx.fillRect(drawX, drawY, g, g);
+                            currentStroke.segments.push({ x: drawX, y: drawY, w: g });
+                            currentStroke.pixelSet.add(key);
+                        }
+                    }
+                }
+                if (x === currGridX && y === currGridY) break;
+                const e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x += sx; }
+                if (e2 < dx) { err += dx; y += sy; }
+            }
+            lastGridX = currGridX; lastGridY = currGridY;
+        } else if (brushMode === 'flat') {
+            const angle = Math.PI / 4;
+            const dx = Math.cos(angle)*(bSize/2), dy = Math.sin(angle)*(bSize/2);
+            const p1={x:lastX-dx, y:lastY+dy}, p2={x:lastX+dx, y:lastY-dy}, p3={x:pos.x+dx, y:pos.y-dy}, p4={x:pos.x-dx, y:pos.y+dy};
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.closePath(); ctx.fill();
+            currentStroke.segments.push({x1:p1.x, y1:p1.y, x2:p2.x, y2:p2.y, x3:p3.x, y3:p3.y, x4:p4.x, y4:p4.y});
+            lastX = pos.x; lastY = pos.y;
+        } else if (brushMode === 'ribbon') {
+            currentStroke.points.push({x: pos.x, y: pos.y}); refreshScreen();
+        } else if (brushMode === 'calligraphy') {
+            const dist = Math.hypot(pos.x-lastX, pos.y-lastY);
+            const steps = Math.max(1, Math.ceil(dist/2)), angle = Math.atan2(pos.y-lastY, pos.x-lastX);
+            const bristleCount = (8 + bSize / 3);
+            for(let i=0; i<steps; i++){
+                const t = i/steps, cx = lastX+(pos.x-lastX)*t, cy = lastY+(pos.y-lastY)*t;
+                for(let j=0; j<bristleCount; j++){
+                    if(Math.random() > (bRough * 0.9)){ 
+                        const offset = (Math.random()-0.5)*bSize, bristleW = Math.random()*(bSize/4) + 0.5;
+                        const bx1 = cx+Math.cos(angle+Math.PI/2)*offset, by1 = cy+Math.sin(angle+Math.PI/2)*offset;
+                        const bx2 = bx1+Math.cos(angle)*Math.random()*bSize, by2 = by1+Math.sin(angle)*Math.random()*bSize;
+                        ctx.beginPath(); ctx.lineWidth = bristleW; ctx.lineCap = 'butt'; ctx.moveTo(bx1,by1); ctx.lineTo(bx2,by2); ctx.stroke();
+                        currentStroke.segments.push({x1:bx1, y1:by1, x2:bx2, y2:by2, w:bristleW});
+                    }
+                }
+            }
+            lastX = pos.x; lastY = pos.y;
+        } else if (brushMode === 'weave') {
+            const dx = pos.x-lastX, dy = pos.y-lastY, d = Math.sqrt(dx*dx+dy*dy);
+            if(d<2) return;
+            const angle = Math.atan2(dy, dx), step = bSize*0.35;
+            for(let j=0; j<d; j+=2){
+                const r = j/d, curX = lastX+dx*r, curY = lastY+dy*r, is3 = Math.floor(weaveDist/step)%2 === 0;
+                ctx.save(); ctx.translate(curX, curY); ctx.rotate(angle);
+                const w = bSize/5, h = bSize*0.42;
+                if(is3){ ctx.fillRect(-bSize/2, -h/2, w, h); ctx.fillRect(-w/2, -h/2, w, h); ctx.fillRect(bSize/2-w, -h/2, w, h); }
+                else { ctx.fillRect(-bSize/2+w, -h/2, w, h); ctx.fillRect(bSize/2-w*2, -h/2, w, h); }
+                ctx.restore();
+                currentStroke.segments.push({x:curX, y:curY, ang:angle, sz:bSize, is3:is3});
+                weaveDist += 2;
+            }
+            lastX = pos.x; lastY = pos.y;
+        }
+    }
+
+    function end() { isDrawing = false; lastGridX = null; lastGridY = null; }
+
+    canvas.addEventListener('mousedown', start);
+    window.addEventListener('mousemove', (e) => { if (isDrawing) draw(e); });
+    window.addEventListener('mouseup', end);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, {passive: false});
+    window.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, {passive: false});
+    window.addEventListener('touchend', end);
+
+    function getHighResCanvas(isTransparent) {
+        const scale = 3508 / 600; const hCanvas = document.createElement('canvas');
+        hCanvas.width = 3508; hCanvas.height = 800 * scale; const hCtx = hCanvas.getContext('2d');
+        if (!isTransparent) { hCtx.fillStyle = bgColor; hCtx.fillRect(0, 0, hCanvas.width, hCanvas.height); }
+        allPaths.forEach(path => drawPathToContext(hCtx, path, scale));
+        return hCanvas;
+    }
+
+    function downloadPNG() { const hCanvas = getHighResCanvas(true); const link = document.createElement('a'); link.download = 'artwork_HD.png'; link.href = hCanvas.toDataURL('image/png'); link.click(); }
+    function downloadJPG() { const hCanvas = getHighResCanvas(false); const link = document.createElement('a'); link.download = 'artwork_HD.jpg'; link.href = hCanvas.toDataURL('image/jpeg', 0.92); link.click(); }
+
+    function downloadSVG() {
+        let svgLines = `<?xml version="1.0" encoding="UTF-8"?><svg width="600" height="800" viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision"><rect width="100%" height="100%" fill="${bgColor}"/><g>`;
+        
+        allPaths.forEach(path => {
+            const color = path.color || '#000000';
+            
+            // 模式分类：Compound Path 合并类 (像素, 圆珠, 方块, 编织, 扁头)
+            if (['blocky', 'pixel', 'pix-thick', 'beads', 'weave', 'flat'].includes(path.mode)) {
+                let d = "";
+                if (path.mode === 'beads') {
+                    path.segments.forEach(seg => {
+                        const r = seg.w/2;
+                        d += `M${(seg.x-r).toFixed(2)},${seg.y.toFixed(2)}a${r.toFixed(2)},${r.toFixed(2)} 0 1,0 ${(r*2).toFixed(2)},0a${r.toFixed(2)},${r.toFixed(2)} 0 1,0 -${(r*2).toFixed(2)},0 `;
+                    });
+                } else if (path.mode === 'weave') {
+                    path.segments.forEach(seg => {
+                        const w = seg.sz/5, h = seg.sz*0.42;
+                        const rts = seg.is3 ? [[-seg.sz/2, -h/2, w, h], [-w/2, -h/2, w, h], [seg.sz/2-w, -h/2, w, h]] : [[-seg.sz/2+w, -h/2, w, h], [seg.sz/2-w*2, -h/2, w, h]];
+                        const cos = Math.cos(seg.ang), sin = Math.sin(seg.ang);
+                        rts.forEach(r => {
+                            const x1 = r[0]*cos - r[1]*sin + seg.x, y1 = r[0]*sin + r[1]*cos + seg.y;
+                            const x2 = (r[0]+r[2])*cos - r[1]*sin + seg.x, y2 = (r[0]+r[2])*sin + r[1]*cos + seg.y;
+                            const x3 = (r[0]+r[2])*cos - (r[1]+r[3])*sin + seg.x, y3 = (r[0]+r[2])*sin + (r[1]+r[3])*cos + seg.y;
+                            const x4 = r[0]*cos - (r[1]+r[3])*sin + seg.x, y4 = r[0]*sin + (r[1]+r[3])*cos + seg.y;
+                            d += `M${x1.toFixed(2)},${y1.toFixed(2)} L${x2.toFixed(2)},${y2.toFixed(2)} L${x3.toFixed(2)},${y3.toFixed(2)} L${x4.toFixed(2)},${y4.toFixed(2)} Z `;
+                        });
+                    });
+                } else if (path.mode === 'flat') {
+                    path.segments.forEach(seg => {
+                        d += `M${seg.x1.toFixed(2)},${seg.y1.toFixed(2)} L${seg.x2.toFixed(2)},${seg.y2.toFixed(2)} L${seg.x3.toFixed(2)},${seg.y3.toFixed(2)} L${seg.x4.toFixed(2)},${seg.y4.toFixed(2)} Z `;
+                    });
+                } else { // blocky, pixel
+                    path.segments.forEach(seg => {
+                        d += `M${seg.x.toFixed(2)},${seg.y.toFixed(2)}h${seg.w}v${seg.w}h-${seg.w}z `;
+                    });
+                }
+                svgLines += `<path d="${d}" fill="${color}" stroke="none" />`;
+            } 
+            else if (path.mode === 'ribbon') {
+                if (path.points.length > 1) {
+                    let d = `M${path.points[0].x.toFixed(2)},${path.points[0].y.toFixed(2)}`;
+                    for (let i = 1; i < path.points.length; i++) d += ` L${path.points[i].x.toFixed(2)},${path.points[i].y.toFixed(2)}`;
+                    svgLines += `<path d="${d}" stroke="${color}" stroke-width="${path.width}" stroke-linecap="butt" fill="none" stroke-linejoin="round" />`;
+                }
+            } else {
+                // marker, ink, organic, jitter, calligraphy 优化重点
+                // 按照画笔宽度(w)进行归类合并，极大减少 SVG 节点数量
+                const lCap = (path.mode === 'calligraphy') ? 'butt' : 'round';
+                const widthGroups = {};
+                
+                path.segments.forEach(seg => {
+                    const wKey = seg.w.toFixed(1); // 相同宽度的线段归为一类
+                    if (!widthGroups[wKey]) widthGroups[wKey] = "";
+                    widthGroups[wKey] += `M${seg.x1.toFixed(2)},${seg.y1.toFixed(2)} L${seg.x2.toFixed(2)},${seg.y2.toFixed(2)} `;
+                });
+
+                Object.keys(widthGroups).forEach(w => {
+                    svgLines += `<path d="${widthGroups[w]}" stroke="${color}" stroke-width="${w}" stroke-linecap="${lCap}" stroke-linejoin="round" fill="none" />`;
+                });
+            }
+        });
+        
+        svgLines += `</g></svg>`;
+        const link = document.createElement('a'); 
+        link.href = URL.createObjectURL(new Blob([svgLines], {type: 'image/svg+xml'})); 
+        link.download = 'artwork_fast_open.svg'; 
+        link.click();
+    }
+
+    function clearCanvas() { allPaths = []; refreshScreen(); }
+    document.getElementById('inp-brush-color').oninput = function() { bColor = this.value; };
+    document.getElementById('inp-bg-color').oninput = function() { bgColor = this.value; refreshScreen(); };
+    document.getElementById('inp-size').oninput = function() { bSize = parseInt(this.value); document.getElementById('val-size').innerText = this.value + 'px'; };
+    document.getElementById('inp-rough').oninput = function() { bRough = this.value / 100; document.getElementById('val-rough').innerText = this.value + '%'; };
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
